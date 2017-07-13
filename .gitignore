@@ -6,6 +6,9 @@ model/*
 !data/.gitkeepdir
 !data/dev_submission.csv
 
+# explude vim swp files
+*.swp
+
 #exclude bin config file
 bin/*.json
 
