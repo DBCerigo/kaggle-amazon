@@ -18,6 +18,8 @@ class TrainBatch():
         filenames = [os.path.splitext(os.path.basename(fn))[0] for fn in self.image_gen.filenames]
         labels = self.get_labels(filenames)
         self.label_gen = self.create_label_gen(labels)
+        self.labels = labels
+        self.filenames = filenames
         
     def create_image_gen(self, img_size):
         batches = preprocess.get_batches(self.path, batch_size=self.batch_size,

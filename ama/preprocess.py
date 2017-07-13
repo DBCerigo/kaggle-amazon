@@ -31,7 +31,7 @@ def onehot_labels(strings):
             raise Exception('Unrecognised label '+s)
     return vector
 
-def get_batches(dirname, gen=ImageDataGenerator(), shuffle=True, 
+def get_batches(dirname, gen=ImageDataGenerator(), shuffle=False,
 				batch_size=128, class_mode=None, target_size=(256,256)):
     return gen.flow_from_directory(dirname, target_size=target_size,
             class_mode=class_mode, shuffle=shuffle, batch_size=batch_size)
