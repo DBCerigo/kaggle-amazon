@@ -5,11 +5,14 @@ from keras.utils.np_utils import to_categorical
 from keras.preprocessing.image import ImageDataGenerator
 
 class TrainBatch():
+    """Returns a generator to give to train_generator or predict_generator. NOTE
+    that currently shuffling doesn't work, hence it being left at False"""
     def __init__(self, path, label_path, img_size=(128,128), batch_size=128, 
-            imagegen=ImageDataGenerator()):
+            imagegen=ImageDataGenerator(), train=True):
         self.path = path
         self.label_path = label_path
         self.batch_size = batch_size
+        self.train = train
         self.labelorder =  ["agriculture",
             "artisinal_mine",
             "bare_ground",
@@ -34,16 +37,20 @@ class TrainBatch():
         return self.next()
     
     def next(self):
-        return (self.image_gen.next(), self.label_gen.next())
+        if self.train:
+            return (self.image_gen.next(), self.label_gen.next())
+        else:
+            return self.image_gen.next()
         
     def create(self, img_size, imagegen):
         img_batches = self.create_image_gen(img_size, imagegen)
         filenames = [os.path.splitext(os.path.basename(fn))[0] 
                     for fn in self.image_gen.filenames]
-        labels = self.get_labels(filenames)
-        self.label_gen = self.create_label_gen(labels)
-        self.labels = labels
         self.filenames = filenames
+        if self.train:
+            labels = self.get_labels(filenames)
+            self.label_gen = self.create_label_gen(labels)
+            self.labels = labels
         
     def create_image_gen(self, img_size, imagegen):
         batches = self.get_batches(self.path, gen=imagegen, 
