@@ -1,39 +1,80 @@
 import os.path
 import pandas as pd
 import numpy as np
-import preprocess
+from keras.utils.np_utils import to_categorical
+from keras.preprocessing.image import ImageDataGenerator
 
 class TrainBatch():
-    def __init__(self, path, label_path, img_size=(128,128), batch_size=128):
+    def __init__(self, path, label_path, img_size=(128,128), batch_size=128, 
+            imagegen=ImageDataGenerator()):
         self.path = path
         self.label_path = label_path
         self.batch_size = batch_size
-        self.create(img_size)
+        self.labelorder =  ["agriculture",
+            "artisinal_mine",
+            "bare_ground",
+            "blooming",
+            "blow_down",
+            "clear",
+            "cloudy",
+            "conventional_mine",
+            "cultivation",
+            "habitation",
+            "haze",
+            "partly_cloudy",
+            "primary",
+            "road",
+            "selective_logging",
+            "slash_burn",
+            "water"
+        ]
+        self.create(img_size, imagegen)
+
+    def __next__(self):
+        return self.next()
     
     def next(self):
         return (self.image_gen.next(), self.label_gen.next())
         
-    def create(self, img_size):
-        img_batches = self.create_image_gen(img_size)
-        filenames = [os.path.splitext(os.path.basename(fn))[0] for fn in self.image_gen.filenames]
+    def create(self, img_size, imagegen):
+        img_batches = self.create_image_gen(img_size, imagegen)
+        filenames = [os.path.splitext(os.path.basename(fn))[0] 
+                    for fn in self.image_gen.filenames]
         labels = self.get_labels(filenames)
         self.label_gen = self.create_label_gen(labels)
         self.labels = labels
         self.filenames = filenames
         
-    def create_image_gen(self, img_size):
-        batches = preprocess.get_batches(self.path, batch_size=self.batch_size,
-            target_size=img_size)
+    def create_image_gen(self, img_size, imagegen):
+        batches = self.get_batches(self.path, gen=imagegen, 
+            batch_size=self.batch_size, target_size=img_size)
         self.image_gen = batches
         self.nb_sample = batches.nb_sample
+        
+    def get_batches(self, dirname, gen, shuffle=False,
+                    batch_size=128, class_mode=None, target_size=(256,256)):
+        return gen.flow_from_directory(dirname, target_size=target_size,
+                class_mode=class_mode, shuffle=shuffle, batch_size=batch_size)
         
     def get_labels(self, filenames):
         tags = pd.read_csv(self.label_path)
         df = pd.DataFrame()
         df['image_name'] = filenames
         df = df.merge(tags, how='left', on='image_name')
-        labels = np.stack([preprocess.onehot_labels(v) for v in df.tags], axis=0)
+        labels = np.stack([self.onehot_labels(v) for v in df.tags],axis=0)
         return labels
+
+    def onehot_labels(self, strings):
+        labels = self.labelorder
+        strings = strings.split(' ')
+        vector = np.zeros(len(labels))
+        for s in strings:
+            try:
+                idx = labels.index(s)
+                vector += to_categorical([idx], len(labels)).squeeze()
+            except ValueError:
+                raise Exception('Unrecognised label '+s)
+        return vector
         
     def create_label_gen(self, labels):
         batch_size = self.batch_size
