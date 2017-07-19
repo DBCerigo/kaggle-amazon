@@ -12,8 +12,6 @@ def write_val_csv(preds, labels, filenames, labelorder, fp):
 def onehot_to_string(vector, thresholds, labelorder):
     s = ''
     for v, th, name in zip(vector, thresholds, labelorder):
-        print v
-        print th
         if v>th:
             s += ' '+name
     return s[1:]
