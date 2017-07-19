@@ -5,9 +5,10 @@ from keras.layers.normalization import BatchNormalization
 
 class Vgg():
 
-    def __init__(self, input_shape=(32,32,3)):
+    def __init__(self, input_shape=(32,32,3), dropout=0.25):
         self.model = None
         self.classes = None
+        self.dropout = dropout
         self.create(input_shape=input_shape)
     
     def ConvBlock(self, nb_filter, nb_layer):
@@ -21,7 +22,7 @@ class Vgg():
         model = self.model 
         model.add(Dense(nb_unit, activation='relu'))
         model.add(BatchNormalization())
-        model.add(Dropout(0.25))
+        model.add(Dropout(self.dropout))
         
     def create(self, input_shape):
         model = self.model = Sequential()
@@ -40,3 +41,14 @@ class Vgg():
         self.FCBlock(512)
         
         model.add(Dense(17, activation='sigmoid'))
+
+    def load_weights(self, fp, loaded_dropout=0.25):
+        self.model.load_weights(fp)
+        self.scale_weights(old_dropout=loaded_dropout)
+
+    def scale_weights(self, old_dropout):
+        scale_factor = (1-old_dropout)/(1-self.dropout)
+        for layer in self.model.layers[:-1]:
+            #Only the dense layers have dropout afterwards
+            if type(layer) is Dense:
+                layer.set_weights([o*scale_factor for o in layer.get_weights()])
