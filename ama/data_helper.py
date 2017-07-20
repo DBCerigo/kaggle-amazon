@@ -3,6 +3,7 @@ import sys
 import gc
 import numpy as np
 import pandas as pd
+import random
 from tqdm import tqdm
 from PIL import Image
 from itertools import chain
@@ -50,6 +51,25 @@ def _train_transform_to_matrices(*args):
     img.thumbnail(img_resize)  # Resize the image
 
     # Augment the image `img` here
+
+    rotation = random.choice([0,1,2,3])
+    extra_rotation = random.choice(range(6))
+    h_reflect = random.choice([0,1])
+    v_reflect = random.choice([0,1])
+    
+    if rotation == 1:
+        img = img.transpose(Image.ROTATE_90)
+    if rotation == 2:
+        img = img.transpose(Image.ROTATE_180)
+    if rotation == 3:
+        img = img.transpose(Image.ROTATE_270)
+
+    img.rotate(extra_rotation)
+
+    if h_reflect:
+        img = img.transpose(Image.FLIP_LEFT_RIGHT)
+    if v_reflect:
+        img = img.transpose(Image.FLIP_TOP_BOTTOM)
 
     # Convert to RGB and normalize
     img_array = np.asarray(img.convert("RGB"), dtype=np.float32) / 255
